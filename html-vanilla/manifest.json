@@ -1,0 +1,21 @@
+{
+  "name": "Manajemen Wali Kelas",
+  "short_name": "Wali Kelas",
+  "description": "Aplikasi pengelolaan kelas untuk guru",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e3a8a",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "./app_icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

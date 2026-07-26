@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membersihkan Cache...</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; color: #334155; text-align: center; padding: 20px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <h2>Sedang Memperbarui Aplikasi...</h2>
+    <p>Harap tunggu sebentar, cache sedang dibersihkan agar perbaikan tampilan HP Anda bisa diterapkan.</p>
+    
+    <script>
+        setTimeout(async () => {
+            try {
+                // Hapus semua cache PWA
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+                
+                // Unregister semua Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                
+                // Arahkan kembali ke index.html
+                window.location.replace('./index.html?updated=true&time=' + Date.now());
+            } catch (err) {
+                alert("Gagal membersihkan cache. Silakan buka mode Incognito.");
+                window.location.replace('./index.html');
+            }
+        }, 1500);
+    </script>
+</body>
+</html>
