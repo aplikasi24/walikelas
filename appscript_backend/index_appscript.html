@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Manajemen Wali Kelas</title>
+  
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            navy: {
+              50: '#f0f4f8',
+              100: '#d9e2ec',
+              200: '#bcccdc',
+              300: '#9fb3c8',
+              400: '#829ab1',
+              500: '#627d98',
+              600: '#486581',
+              700: '#334e68',
+              800: '#243b53',
+              900: '#102a43',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    
+    /* Modern Loader */
+    .loader {
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top: 3px solid #ffffff;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    .loader.loader-dark {
+      border: 3px solid #e2e8f0;
+      border-top: 3px solid #3b82f6;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Sleek Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+    
+    /* Glassmorphism & Gradients */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .bg-navy-gradient {
+      background: linear-gradient(135deg, #102a43 0%, #243b53 100%);
+    }
+
+    /* Device Mockup */
+    .phone-bezel {
+      box-shadow: 0 0 0 10px #1e293b, 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="flex items-center justify-center min-h-screen bg-navy-gradient relative overflow-hidden">
+    <!-- Decorative Blobs -->
+    <div class="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+
+    <div class="glass-card p-10 rounded-[2rem] shadow-2xl w-full max-w-md relative z-10 transform transition-all">
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-cyan-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/30 transform -rotate-3">
+          <i class="fas fa-shield-alt text-3xl"></i>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Admin Portal</h2>
+        <p class="text-sm text-slate-500 mt-2">Manajemen & Broadcast Wali Kelas</p>
+      </div>
+      
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Password Akses</label>
+        <div class="relative group">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+            <i class="fas fa-lock"></i>
+          </div>
+          <input type="password" id="adminPassword" class="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="Masukkan password admin...">
+        </div>
+      </div>
+      
+      <button type="button" id="btnLogin" onclick="doLogin()" class="w-full bg-gradient-to-r from-navy-800 to-navy-700 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-navy-900/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3">
+        <span id="btnLoginText">Masuk Sekarang</span>
+        <div id="loginLoader" class="loader hidden"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboardScreen" class="hidden min-h-screen flex flex-col bg-slate-50">
+    
+    <!-- Navbar -->
+    <nav class="bg-navy-900 text-white sticky top-0 z-50 shadow-md">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-inner">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+              <h1 class="font-bold text-lg leading-tight tracking-wide">Workspace Admin</h1>
+              <p class="text-[10px] text-blue-200 uppercase tracking-widest font-semibold">Sistem Terpadu</p>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <button onclick="doLogout()" class="text-slate-300 hover:text-white font-medium text-sm flex items-center gap-2 transition px-4 py-2 rounded-lg hover:bg-white/10">
+              <i class="fas fa-sign-out-alt"></i> Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+      
+      <!-- Left Column: Data Guru (Span 5) -->
+      <div class="lg:col-span-5 flex flex-col space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[720px]">
+          
+          <!-- Tabs Header -->
+          <div class="p-0 border-b border-slate-100 flex bg-slate-50 text-sm font-semibold">
+            <button onclick="window.switchTab('users')" id="tab-users" class="flex-1 py-4 text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition-colors">
+              <i class="fas fa-users-cog"></i> Persetujuan Akun
+            </button>
+            <button onclick="window.switchTab('logs')" id="tab-logs" class="flex-1 py-4 text-slate-400 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition-colors">
+              <i class="fas fa-history"></i> Log Aktivitas
+            </button>
+            <button onclick="if(window.currentAdminTab === 'logs') loadLogs(); else loadUsers();" class="px-5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition border-l border-slate-200" title="Refresh Data">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+          
+          <!-- Data Users -->
+          <div id="content-users" class="flex-1 overflow-auto custom-scrollbar p-0 block bg-white">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 sticky top-0 text-slate-500 shadow-sm z-10 text-xs uppercase tracking-wider">
+                <tr>
+                  <th class="py-4 px-5 font-semibold">Informasi Guru</th>
+                  <th class="py-4 px-5 font-semibold">Status</th>
+                  <th class="py-4 px-5 font-semibold text-right">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody" class="divide-y divide-slate-100">
+                <!-- User rows populated via JS -->
+              </tbody>
+            </table>
+            <div id="usersLoading" class="p-12 flex flex-col items-center justify-center text-slate-400 hidden h-full">
+              <div class="loader loader-dark mb-4"></div>
+              <p class="font-medium text-sm text-slate-500">Menyinkronkan data...</p>
+            </div>
+          </div>
+
+          <!-- Data Logs -->
+          <div id="content-logs" class="flex-1 overflow-auto custom-scrollbar p-0 hidden bg-white relative">
+            
+            <!-- Logs Action Bar -->
+            <div class="sticky top-0 bg-white/95 backdrop-blur-sm z-20 border-b border-slate-100 p-3 flex flex-col sm:flex-row justify-between items-center shadow-sm gap-2">
+              <span id="logPageInfo" class="text-xs font-semibold text-slate-500">Memuat...</span>
+              <div class="flex items-center gap-2">
+                <button onclick="prevLogsPage()" id="btnPrevLogs" class="text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled><i class="fas fa-chevron-left"></i> Prev</button>
+                <button onclick="nextLogsPage()" id="btnNextLogs" class="text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled>Next <i class="fas fa-chevron-right"></i></button>
+                <div class="w-px h-5 bg-slate-200 mx-1"></div>
+                <button onclick="deleteAllLogs()" id="btnDelAllLogs" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all" disabled><i class="fas fa-trash-alt mr-1"></i> Hapus Semua</button>
+              </div>
+            </div>
+
+            <table class="w-full text-left text-sm relative">
+              <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                <tr>
+                  <th class="py-4 px-5 font-semibold">Waktu</th>
+                  <th class="py-4 px-5 font-semibold">Akun</th>
+                  <th class="py-4 px-5 font-semibold">Aktivitas</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody" class="divide-y divide-slate-100">
+                <!-- Log rows populated via JS -->
+              </tbody>
+            </table>
+            <div id="logsLoading" class="p-12 flex flex-col items-center justify-center text-slate-400 hidden h-full mt-10">
+              <div class="loader loader-dark mb-4"></div>
+              <p class="font-medium text-sm text-slate-500">Memuat log sistem...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Column: Broadcast Message (Span 4) -->
+      <div class="lg:col-span-4 space-y-6 flex flex-col">
+        
+        <!-- Form Broadcast -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+              <i class="fas fa-paper-plane text-lg"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-800 text-lg" id="formMsgTitle">Pusat Siaran</h2>
+              <p class="text-xs text-slate-500">Kirim pengumuman ke aplikasi guru</p>
+            </div>
+          </div>
+          
+          <input type="hidden" id="msgId" value="">
+          <input type="hidden" id="msgOldImg" value="">
+          
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Judul Informasi</label>
+            <input type="text" id="msgTitle" oninput="updatePreview()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white text-sm transition-all placeholder-slate-400" placeholder="Contoh: Rapat Evaluasi Mingguan">
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Isi Pesan Detail</label>
+            <textarea id="msgBody" oninput="updatePreview()" rows="5" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white text-sm resize-none custom-scrollbar transition-all placeholder-slate-400" placeholder="Tulis rincian pesan di sini..."></textarea>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex justify-between">
+              <span>Lampirkan Gambar</span> <span class="text-slate-400 font-normal normal-case">(Opsional)</span>
+            </label>
+            <div class="relative">
+              <input type="file" id="msgImage" accept="image/*" onchange="onImageChange()" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-xl bg-slate-50 cursor-pointer transition-all">
+            </div>
+            <p id="msgImgPreview" class="text-xs text-emerald-600 mt-2 hidden font-medium flex items-center gap-1"><i class="fas fa-check-circle"></i> Gambar telah terlampir sebelumnya.</p>
+          </div>
+          
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex justify-between">
+              <span>Tautan Aksi / Link</span> <span class="text-slate-400 font-normal normal-case">(Opsional)</span>
+            </label>
+            <input type="text" id="msgLink" oninput="updatePreview()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-slate-50 focus:bg-white text-sm transition-all placeholder-slate-400" placeholder="https://zoom.us/j/12345...">
+          </div>
+          
+          <div class="flex gap-3">
+            <button type="button" onclick="doSendMessage()" id="btnSendMsg" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-paper-plane"></i> Kirim Broadcast
+            </button>
+            <button type="button" id="btnCancelEdit" onclick="doCancelEdit()" class="hidden bg-slate-200 text-slate-700 font-bold py-3 px-5 rounded-xl hover:bg-slate-300 transition-all">
+              Batal
+            </button>
+          </div>
+        </div>
+
+        <!-- Arsip Pengumuman -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex-1 flex flex-col max-h-[300px]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-archive"></i>
+              </div>
+              <h3 class="font-bold text-slate-800">Arsip Pengumuman</h3>
+            </div>
+          </div>
+          <div class="overflow-y-auto flex-1 custom-scrollbar border border-slate-100 rounded-xl bg-slate-50/50">
+            <table class="w-full text-left text-sm">
+              <tbody id="msgTableBody" class="divide-y divide-slate-100">
+                <!-- Messages will load here via JS -->
+              </tbody>
+            </table>
+            <div id="msgLoading" class="p-6 flex justify-center text-slate-400 hidden h-full items-center">
+              <div class="loader loader-dark w-5 h-5 border-2 border-t-indigo-500"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Preview (Span 3) -->
+      <div class="lg:col-span-3 flex justify-center lg:justify-end">
+        <div class="sticky top-24 w-[300px] h-[620px] bg-slate-900 rounded-[3rem] phone-bezel relative flex flex-col overflow-hidden">
+          
+          <!-- Phone Hardware details -->
+          <div class="absolute top-0 inset-x-0 h-7 flex justify-center z-30">
+            <div class="w-28 h-5 bg-slate-900 rounded-b-2xl flex items-end justify-center pb-1 gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-slate-800/80"></div>
+              <div class="w-10 h-1.5 rounded-full bg-slate-800/80"></div>
+            </div>
+          </div>
+          
+          <!-- Phone Status Bar -->
+          <div class="bg-blue-700 text-white px-5 pt-2 pb-1 flex justify-between items-center text-[10px] font-medium z-20">
+            <span>19:28</span>
+            <div class="flex gap-1.5">
+              <i class="fas fa-signal"></i>
+              <i class="fas fa-wifi"></i>
+              <i class="fas fa-battery-full"></i>
+            </div>
+          </div>
+
+          <!-- App Header -->
+          <div class="bg-blue-600 px-4 py-4 text-white flex items-center gap-3 shadow-md z-20">
+            <div class="w-9 h-9 rounded-full bg-white/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold leading-tight">App Guru</h3>
+              <p class="text-[10px] opacity-80">Portal Sekolah</p>
+            </div>
+          </div>
+
+          <!-- App Body (Chat interface) -->
+          <div class="flex-1 bg-[#F0F2F5] p-4 overflow-y-auto custom-scrollbar relative z-10">
+            
+            <div class="text-center mb-4 mt-2">
+              <span class="bg-slate-200 text-slate-600 text-[10px] px-2 py-1 rounded-lg font-medium">Hari Ini</span>
+            </div>
+
+            <!-- Message Bubble -->
+            <div class="flex w-full justify-start mb-6 relative">
+              <div class="w-8 h-8 rounded-full bg-navy-800 flex-shrink-0 flex items-center justify-center mr-2 text-white shadow-sm self-end mb-1">
+                <i class="fas fa-user-shield text-[10px]"></i>
+              </div>
+              <div class="max-w-[80%] flex flex-col relative">
+                <span class="text-[10px] text-slate-500 font-bold ml-1 mb-1">Admin Pusat</span>
+                
+                <div class="bg-white text-slate-800 shadow-sm border border-slate-200 rounded-2xl rounded-bl-none p-3 relative group">
+                  <div class="absolute -top-2 -right-2 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 z-10 border border-white">
+                    <i class="fas fa-bell text-[8px]"></i> BARU
+                  </div>
+                  
+                  <img id="previewImg" src="" class="max-w-full rounded-lg mb-2 border border-slate-100 hidden object-cover">
+                  
+                  <div class="text-[13px] leading-relaxed whitespace-pre-wrap break-all text-slate-700" id="previewText">Ketik pesan di form untuk melihat pratinjau...</div>
+                  
+                  <!-- Fixing the missing previewLinkBox logic smoothly -->
+                  <div id="previewLinkBox" class="hidden mt-2 border-t border-slate-100 pt-2">
+                     <a id="previewLinkBtn" href="#" target="_blank" class="bg-blue-50 text-blue-600 rounded-lg p-2 text-[11px] font-medium truncate break-all flex items-center transition hover:bg-blue-100">
+                       <div class="w-6 h-6 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center mr-2 flex-shrink-0"><i class="fas fa-link text-[10px]"></i></div>
+                       <span class="truncate">Link Tautan</span>
+                     </a>
+                  </div>
+                  
+                  <span class="text-[9px] text-slate-400 mt-1.5 block text-right font-medium">Baru saja</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Home Indicator -->
+          <div class="bg-[#F0F2F5] pb-2 pt-1 flex justify-center z-20">
+             <div class="w-24 h-1 bg-slate-300 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-700 text-white px-5 py-3.5 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
+      <i class="fas fa-check"></i>
+    </div>
+    <span id="toastMsg" class="text-sm font-semibold tracking-wide">Notifikasi sistem</span>
+  </div>
+
+  <script>
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      t.style.transform = 'translateY(0)';
+      t.style.opacity = '1';
+      setTimeout(function() { t.style.transform = 'translateY(100px)'; t.style.opacity = '0'; }, 3500);
+    }
+
+    function doLogin() {
+      var pwd = document.getElementById('adminPassword').value;
+      if (!pwd) { alert('Masukkan password terlebih dahulu!'); return; }
+      var btn = document.getElementById('btnLogin');
+      var btnText = document.getElementById('btnLoginText');
+      var ldr = document.getElementById('loginLoader');
+      btn.disabled = true;
+      btnText.innerText = 'Memverifikasi...';
+      ldr.classList.remove('hidden');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btnText.innerText = 'Masuk Sekarang';
+          ldr.classList.add('hidden');
+          if (res && res.status === 'success') {
+            localStorage.setItem('admin_logged_in', 'true');
+            showDashboard();
+          } else {
+            alert(res && res.message ? res.message : 'Password salah!');
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btnText.innerText = 'Masuk Sekarang';
+          ldr.classList.add('hidden');
+          alert('Gagal terhubung ke server: ' + err.message);
+        })
+        .loginAdmin({password: pwd});
+    }
+
+    function showDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+      loadUsers();
+      loadArchiveMessages();
+      showToast('Autentikasi berhasil!');
+    }
+
+    function doLogout() {
+      if (!confirm('Keluar dari portal admin?')) return;
+      localStorage.removeItem('admin_logged_in');
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('dashboardScreen').classList.add('hidden');
+    }
+
+    window.onload = function() {
+      if (localStorage.getItem('admin_logged_in') === 'true') { showDashboard(); }
+      var pwdField = document.getElementById('adminPassword');
+      if (pwdField) {
+        pwdField.onkeydown = function(e) { if (e.key === 'Enter') doLogin(); };
+      }
+    };
+
+    function updatePreview() {
+      var title = document.getElementById('msgTitle').value;
+      var body = document.getElementById('msgBody').value;
+      var link = document.getElementById('msgLink').value;
+      var teks = (title || body) ? ((title ? 'Judul: ' + title + '\n\n' : '') + body) : 'Ketik pesan di form untuk melihat pratinjau...';
+      document.getElementById('previewText').innerText = teks;
+      var box = document.getElementById('previewLinkBox');
+      var lnk = document.getElementById('previewLinkBtn');
+      if (link) {
+        box.classList.remove('hidden');
+        lnk.innerText = link;
+        lnk.href = (link.indexOf('http') === 0) ? link : 'http://' + link;
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function onImageChange() {
+      var file = document.getElementById('msgImage').files[0];
+      var pi = document.getElementById('previewImg');
+      if (file) {
+        pi.src = URL.createObjectURL(file);
+        pi.classList.remove('hidden');
+      } else {
+        var old = document.getElementById('msgOldImg').value;
+        if (old) {
+          if (old.indexOf('drive.google.com/file/d/') > -1) {
+            var matchId = old.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchId) old = 'https://drive.google.com/uc?export=view&id=' + matchId[1];
+          }
+          pi.src = old;
+          pi.classList.remove('hidden');
+        } else {
+          pi.src = '';
+          pi.classList.add('hidden');
+        }
+      }
+    }
+
+    window.currentAdminTab = 'users';
+    
+    window.switchTab = function(tab) {
+      window.currentAdminTab = tab;
+      // Updated UI Strings for Navy theme
+      document.getElementById('tab-users').className = 'flex-1 py-4 flex items-center justify-center gap-2 transition-colors ' + (tab === 'users' ? 'text-blue-600 border-b-2 border-blue-600 font-semibold bg-white' : 'text-slate-400 border-b-2 border-transparent hover:text-slate-700 font-medium');
+      document.getElementById('tab-logs').className = 'flex-1 py-4 flex items-center justify-center gap-2 transition-colors ' + (tab === 'logs' ? 'text-blue-600 border-b-2 border-blue-600 font-semibold bg-white' : 'text-slate-400 border-b-2 border-transparent hover:text-slate-700 font-medium');
+      
+      if (tab === 'users') {
+        document.getElementById('content-users').classList.replace('hidden', 'block');
+        document.getElementById('content-logs').classList.replace('block', 'hidden');
+        loadUsers();
+      } else {
+        document.getElementById('content-logs').classList.replace('hidden', 'block');
+        document.getElementById('content-users').classList.replace('block', 'hidden');
+        loadLogs();
+      }
+    };
+
+    window.allLogsData = [];
+    window.currentLogPage = 1;
+    window.logsPerPage = 50;
+
+    function loadLogs() {
+      var tbody = document.getElementById('logTableBody');
+      var ldr = document.getElementById('logsLoading');
+      tbody.innerHTML = '';
+      ldr.classList.remove('hidden');
+      
+      // Reset UI info
+      document.getElementById('logPageInfo').innerText = 'Menyinkronkan data...';
+      document.getElementById('btnPrevLogs').disabled = true;
+      document.getElementById('btnNextLogs').disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          ldr.classList.add('hidden');
+          if (res && res.status === 'success') { 
+            window.allLogsData = res.data || [];
+            window.currentLogPage = 1;
+            renderLogs(); 
+          }
+          else { 
+            document.getElementById('logPageInfo').innerText = 'Gagal memuat log';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">Gagal memuat log sistem.</td></tr>'; 
+          }
+        })
+        .withFailureHandler(function(err) {
+          ldr.classList.add('hidden');
+          document.getElementById('logPageInfo').innerText = 'Error koneksi';
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-red-500 font-medium">Error: ' + err.message + '</td></tr>';
+        })
+        .getLogs();
+    }
+
+    function renderLogs() {
+      var tbody = document.getElementById('logTableBody');
+      var logs = window.allLogsData || [];
+      var totalLogs = logs.length;
+      var totalPages = Math.ceil(totalLogs / window.logsPerPage) || 1;
+      
+      // Update UI Pagination Info
+      document.getElementById('logPageInfo').innerText = totalLogs > 0 ? 'Halaman ' + window.currentLogPage + ' dari ' + totalPages + ' (' + totalLogs + ' log)' : 'Belum ada log';
+      document.getElementById('btnPrevLogs').disabled = window.currentLogPage <= 1;
+      document.getElementById('btnNextLogs').disabled = window.currentLogPage >= totalPages;
+      document.getElementById('btnDelAllLogs').disabled = totalLogs === 0;
+
+      if (totalLogs === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-slate-400"><i class="fas fa-history text-2xl mb-2 opacity-50"></i><br>Belum ada riwayat aktivitas sistem.</td></tr>';
+        return;
+      }
+      
+      // Paginate data
+      var startIndex = (window.currentLogPage - 1) * window.logsPerPage;
+      var endIndex = Math.min(startIndex + window.logsPerPage, totalLogs);
+      var currentLogs = logs.slice(startIndex, endIndex);
+
+      var html = '';
+      for (var i = 0; i < currentLogs.length; i++) {
+        var tgl = '';
+        try { tgl = new Date(currentLogs[i].tanggal).toLocaleString('id-ID'); } catch(e) {}
+        
+        html += '<tr class="hover:bg-slate-50 transition-colors group border-b border-slate-50"><td class="py-3 px-5 text-xs text-slate-500">' + tgl + '</td>';
+        html += '<td class="py-3 px-5 font-medium text-xs text-slate-700">' + currentLogs[i].email + '</td>';
+        html += '<td class="py-3 px-5 text-xs text-slate-600">' + currentLogs[i].aksi + '</td></tr>';
+      }
+      tbody.innerHTML = html;
+      
+      // Scroll to the top automatically upon changing pages
+      document.getElementById('content-logs').scrollTop = 0;
+    }
+
+    function nextLogsPage() {
+      var totalPages = Math.ceil(window.allLogsData.length / window.logsPerPage);
+      if (window.currentLogPage < totalPages) {
+        window.currentLogPage++;
+        renderLogs();
+      }
+    }
+
+    function prevLogsPage() {
+      if (window.currentLogPage > 1) {
+        window.currentLogPage--;
+        renderLogs();
+      }
+    }
+
+    function deleteAllLogs() {
+      if (!confirm('Apakah Anda yakin ingin menghapus SEMUA log aktivitas secara permanen? Tindakan ini tidak dapat dibatalkan.')) return;
+      
+      var tbody = document.getElementById('logTableBody');
+      var ldr = document.getElementById('logsLoading');
+      tbody.innerHTML = '';
+      ldr.classList.remove('hidden');
+      
+      // Disable controls while processing
+      document.getElementById('btnDelAllLogs').disabled = true;
+      document.getElementById('btnPrevLogs').disabled = true;
+      document.getElementById('btnNextLogs').disabled = true;
+      document.getElementById('logPageInfo').innerText = 'Menghapus log...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.status === 'success') {
+            showToast('Semua log berhasil dibersihkan!');
+          } else {
+            alert(res.message || 'Gagal menghapus log.');
+          }
+          loadLogs(); // Refresh log list directly from server
+        })
+        .withFailureHandler(function(err) {
+          ldr.classList.add('hidden');
+          alert('Gagal menghapus log: ' + err.message);
+          renderLogs(); // Recover view from local data
+        })
+        .clearAllLogs(); // Pastikan ada fungsi clearAllLogs() di file Apps Script (.gs) Anda
+    }
+
+    function loadUsers() {
+      var tbody = document.getElementById('userTableBody');
+      var ldr = document.getElementById('usersLoading');
+      tbody.innerHTML = '';
+      ldr.classList.remove('hidden');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          ldr.classList.add('hidden');
+          if (res && res.status === 'success') { renderUsers(res.data); }
+          else { tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">Gagal mensinkronkan data.</td></tr>'; }
+        })
+        .withFailureHandler(function(err) {
+          ldr.classList.add('hidden');
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-red-500 font-medium">Error: ' + err.message + '</td></tr>';
+        })
+        .getUsers();
+    }
+
+    function renderUsers(users) {
+      var tbody = document.getElementById('userTableBody');
+      if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-12 text-slate-400"><i class="fas fa-user-slash text-3xl mb-3 opacity-30"></i><br>Belum ada guru yang terdaftar.</td></tr>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < users.length; i++) {
+        var u = users[i];
+        // Updated UI Strings for Navy theme badges and buttons
+        var badge = (u.status === 'approved') 
+          ? '<span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif</span>' 
+          : '<span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span> Pending</span>';
+        
+        var ab = (u.status === 'pending') 
+          ? '<button onclick="approveUser(\'' + u.email + '\')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold mr-1.5 hover:bg-blue-700 hover:shadow-md transition-all"><i class="fas fa-check mr-1"></i> Setujui</button>' 
+          : '<button onclick="revokeUser(\'' + u.email + '\')" class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold mr-1.5 hover:bg-slate-200 transition-all"><i class="fas fa-times mr-1"></i> Batal</button>';
+        
+        var msgIcon = '';
+        if (u.unreadCount > 0) {
+          msgIcon = '<button onclick="openPesanGuru(\'' + u.email + '\', \'' + u.nama + '\')" class="relative text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg text-xs mr-2 transition-colors" title="Lihat Pesan"><i class="fas fa-envelope"></i><span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm">' + u.unreadCount + '</span></button>';
+        } else {
+          msgIcon = '<button onclick="openPesanGuru(\'' + u.email + '\', \'' + u.nama + '\')" class="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-slate-100 p-2 rounded-lg text-xs mr-2 transition-colors" title="Riwayat Pesan"><i class="fas fa-envelope-open"></i></button>';
+        }
+        
+        html += '<tr class="hover:bg-slate-50 transition-colors group"><td class="py-4 px-5"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0"><i class="fas fa-user text-sm"></i></div><div><div class="font-bold text-slate-800 text-sm">' + u.nama + '</div><div class="text-[11px] text-slate-500 mt-0.5"><i class="fas fa-envelope mr-1 opacity-70"></i> ' + u.email + '</div><div class="text-[11px] text-slate-500"><i class="fas fa-building mr-1.5 opacity-70"></i> ' + u.sekolah + '</div></div></div></td>';
+        html += '<td class="py-4 px-5 align-middle">' + badge + '</td>';
+        html += '<td class="py-4 px-5 text-right align-middle">' + msgIcon + ab + '<button onclick="rejectUser(\'' + u.email + '\')" class="bg-white border border-red-200 text-red-500 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all"><i class="fas fa-trash-alt"></i></button></td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function approveUser(email) {
+      if (!confirm('Setujui akun guru ini?')) return;
+      google.script.run.withSuccessHandler(function() { showToast('Akun berhasil diaktifkan!'); loadUsers(); }).approveUser(email);
+    }
+
+    function revokeUser(email) {
+      if (!confirm('Batalkan persetujuan untuk guru ini? Akun akan kembali berstatus Pending.')) return;
+      google.script.run.withSuccessHandler(function() { showToast('Status akun diubah ke pending.'); loadUsers(); }).revokeUser(email);
+    }
+
+    function rejectUser(email) {
+      if (!confirm('Hapus akun guru ini secara permanen?')) return;
+      google.script.run.withSuccessHandler(function() { showToast('Akun berhasil dihapus.'); loadUsers(); }).rejectUser(email);
+    }
+
+    function loadArchiveMessages() {
+      var tbody = document.getElementById('msgTableBody');
+      var ldr = document.getElementById('msgLoading');
+      tbody.innerHTML = '';
+      ldr.classList.remove('hidden');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          ldr.classList.add('hidden');
+          if (res && res.status === 'success') { window.allMessages = res.data; renderArchive(res.data); }
+        })
+        .withFailureHandler(function(err) {
+          ldr.classList.add('hidden');
+          tbody.innerHTML = '<tr><td class="text-center py-4 text-red-500 font-medium text-xs">Error: ' + err.message + '</td></tr>';
+        })
+        .getMessages();
+    }
+
+    function renderArchive(data) {
+      var tbody = document.getElementById('msgTableBody');
+      if (!data || data.length === 0) { tbody.innerHTML = '<tr><td class="text-center py-6 text-slate-400 text-xs">Belum ada arsip pengumuman</td></tr>'; return; }
+      var html = '';
+      for (var i = 0; i < data.length; i++) {
+        var m = data[i];
+        var imgIcon = m.gambar_url ? ' <span class="bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded text-[9px] ml-2 font-bold"><i class="fas fa-image"></i> Media</span>' : '';
+        var tgl = m.tanggal || '';
+        try { tgl = new Date(m.tanggal).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit'}); } catch(e2) {}
+        
+        // Updated UI String
+        html += '<tr class="hover:bg-white transition-colors group border-b border-slate-100 last:border-0"><td class="py-3 px-4"><div class="font-bold text-slate-800 text-[13px] line-clamp-1">' + m.judul + '</div><div class="text-[11px] text-slate-400 mt-1 flex items-center"><i class="far fa-clock mr-1"></i> ' + tgl + imgIcon + '</div></td>';
+        html += '<td class="py-3 px-4 text-right" style="white-space:nowrap;"><button onclick="doEditMsg(\'' + m.id + '\')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg text-xs mr-2 transition-colors"><i class="fas fa-edit"></i></button><button onclick="doDelMsg(\'' + m.id + '\')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg text-xs transition-colors"><i class="fas fa-trash-alt"></i></button></td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function doDelMsg(id) {
+      if (!confirm('Hapus permanen pengumuman ini?')) return;
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.status === 'success') {
+            showToast('Pengumuman dihapus!');
+            if (document.getElementById('msgId').value === id) doCancelEdit();
+            loadArchiveMessages();
+          } else { alert(res.message); }
+        })
+        .withFailureHandler(function(err) { alert('Error: ' + err.message); })
+        .deleteMessage(id);
+    }
+
+    function doEditMsg(id) {
+      var m = null;
+      var msgs = window.allMessages || [];
+      for (var i = 0; i < msgs.length; i++) { if (msgs[i].id === id) { m = msgs[i]; break; } }
+      if (!m) return;
+      document.getElementById('msgId').value = m.id;
+      document.getElementById('msgOldImg').value = m.gambar_url || '';
+      document.getElementById('msgTitle').value = m.judul || '';
+      document.getElementById('msgBody').value = m.isi || '';
+      document.getElementById('msgLink').value = m.link_url || '';
+      
+      // Update UI Strings for edit mode
+      document.getElementById('formMsgTitle').innerText = 'Edit Broadcast';
+      document.getElementById('btnSendMsg').innerHTML = '<i class="fas fa-save"></i> Simpan Perubahan';
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+      
+      var pi = document.getElementById('previewImg');
+      if (m.gambar_url) {
+        document.getElementById('msgImgPreview').classList.remove('hidden');
+        var oldImg = m.gambar_url;
+        pi.src = ''; // reset first
+        
+        google.script.run
+          .withSuccessHandler(function(base64Data) {
+            if (base64Data) {
+              pi.src = base64Data;
+              pi.classList.remove('hidden');
+            } else {
+              pi.src = oldImg;
+              pi.classList.remove('hidden');
+            }
+          })
+          .getDriveImageBase64(oldImg);
+      } else {
+        document.getElementById('msgImgPreview').classList.add('hidden');
+        pi.src = '';
+        pi.classList.add('hidden');
+      }
+      updatePreview();
+    }
+
+    function doCancelEdit() {
+      document.getElementById('msgId').value = '';
+      document.getElementById('msgOldImg').value = '';
+      document.getElementById('msgTitle').value = '';
+      document.getElementById('msgBody').value = '';
+      document.getElementById('msgLink').value = '';
+      document.getElementById('msgImage').value = '';
+      
+      // Update UI Strings back to default
+      document.getElementById('formMsgTitle').innerText = 'Pusat Siaran';
+      document.getElementById('btnSendMsg').innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Broadcast';
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+      document.getElementById('msgImgPreview').classList.add('hidden');
+      document.getElementById('previewImg').src = '';
+      document.getElementById('previewImg').classList.add('hidden');
+      updatePreview();
+    }
+
+    function doSendMessage() {
+      var id = document.getElementById('msgId').value;
+      var oldImg = document.getElementById('msgOldImg').value;
+      var title = document.getElementById('msgTitle').value;
+      var body = document.getElementById('msgBody').value;
+      var link = document.getElementById('msgLink').value;
+      var fileInput = document.getElementById('msgImage');
+      var btn = document.getElementById('btnSendMsg');
+      if (!title || !body) { alert('Judul dan Isi Pesan wajib diisi!'); return; }
+      
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-2"></div> Memproses...';
+      
+      var file = fileInput.files[0];
+      if (file) {
+        var img = new Image();
+        var objectUrl = URL.createObjectURL(file);
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var MAX = 900; var w = img.width; var h = img.height;
+          if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+          else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(objectUrl);
+          doSendToServer(id, title, body, link, canvas.toDataURL('image/jpeg', 0.7), oldImg, btn);
+        };
+        img.onerror = function() {
+          URL.revokeObjectURL(objectUrl);
+          alert('Format gambar tidak valid.');
+          btn.disabled = false;
+          btn.innerHTML = id ? '<i class="fas fa-save"></i> Simpan Perubahan' : '<i class="fas fa-paper-plane"></i> Kirim Broadcast';
+        };
+        img.src = objectUrl;
+      } else {
+        doSendToServer(id, title, body, link, null, oldImg, btn);
+      }
+    }
+
+    function doSendToServer(id, title, body, link, base64Data, oldImg, btn) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          if (res && res.status === 'success') {
+            showToast(id ? 'Pembaruan berhasil!' : 'Broadcast terkirim!');
+            doCancelEdit();
+            loadArchiveMessages();
+          } else {
+            alert(res && res.message ? res.message : 'Gagal memproses data.');
+            btn.innerHTML = id ? '<i class="fas fa-save"></i> Simpan Perubahan' : '<i class="fas fa-paper-plane"></i> Kirim Broadcast';
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          alert('Kesalahan server: ' + err.message);
+          btn.innerHTML = id ? '<i class="fas fa-save"></i> Simpan Perubahan' : '<i class="fas fa-paper-plane"></i> Kirim Broadcast';
+        })
+        .saveMessage({ id: id, judul: title, isi: body, linkUrl: link, pengirim: 'Admin', gambarBase64: base64Data, gambarUrl: oldImg });
+    }
+
+    window.allPesanGuru = {};
+    function openPesanGuru(email, nama) {
+      document.getElementById('modal-pesan-guru').classList.remove('hidden');
+      document.getElementById('pg-title').innerText = 'Pesan dari: ' + nama;
+      document.getElementById('pg-body').innerHTML = '<div class="text-center text-slate-400 py-6"><div class="loader loader-dark mx-auto mb-2"></div>Memuat pesan...</div>';
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.status === 'success') {
+            window.allPesanGuru = res.data || {};
+            renderPesanGuruModal(email);
+            
+            // Cek apakah ada unread, lalu otomatis tandai dibaca
+            var g = window.allPesanGuru[email];
+            if (g && g.unreadCount > 0) {
+              google.script.run.withSuccessHandler(function(){ loadUsers(); }).tandaiPesanGuruDibaca(email);
+            }
+          } else {
+            document.getElementById('pg-body').innerHTML = '<div class="text-center text-red-500 py-6">Gagal memuat pesan.</div>';
+          }
+        })
+        .getPesanGuru();
+    }
+    
+    function renderPesanGuruModal(email) {
+      var g = window.allPesanGuru[email];
+      var container = document.getElementById('pg-body');
+      
+      if (!g || !g.messages || g.messages.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-400 py-6">Tidak ada pesan dari guru ini.</div>';
+        return;
+      }
+      
+      var html = '<div class="space-y-4">';
+      for (var i = 0; i < g.messages.length; i++) {
+        var m = g.messages[i];
+        var tgl = new Date(m.id).toLocaleString('id-ID');
+        var badge = m.status_dibaca === '0' ? '<span class="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded ml-2 font-bold">BARU</span>' : '';
+        html += '<div class="bg-slate-50 p-4 rounded-xl border border-slate-100">';
+        html += '<div class="flex justify-between items-center border-b border-slate-200 pb-2 mb-2"><span class="text-xs text-slate-500"><i class="far fa-clock mr-1"></i> ' + tgl + badge + '</span></div>';
+        html += '<p class="text-sm text-slate-700 whitespace-pre-wrap">' + m.pesan + '</p>';
+        html += '</div>';
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+    
+    function closePesanGuruModal() {
+      document.getElementById('modal-pesan-guru').classList.add('hidden');
+    }
+
+  </script>
+
+  <!-- Modal Pesan Guru -->
+  <div id="modal-pesan-guru" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <h3 id="pg-title" class="font-bold text-slate-800"><i class="fas fa-envelope-open-text text-blue-600 mr-2"></i>Pesan dari Guru</h3>
+        <button onclick="closePesanGuruModal()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-lg"></i></button>
+      </div>
+      <div id="pg-body" class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+        <!-- Messages loaded here -->
+      </div>
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <button onclick="closePesanGuruModal()" class="bg-slate-200 text-slate-700 font-bold px-6 py-2.5 rounded-xl hover:bg-slate-300 transition-all text-sm">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
